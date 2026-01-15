@@ -4,6 +4,12 @@ This directory contains the Python source code for the AWS Lambda function that 
 
 ## 🧠 Logic Flow
 
+### Dependencies
+The function relies on external libraries defined in `requirements.txt`:
+*   `pydantic`: Used for strict, declarative payload validation.
+
+### Logic Flow
+
 The `webhook_handler.py` script performs the following steps sequentially:
 
 1.  **Startup**: Initializes the AWS SDK (Boto3) for SQS and reads environment variables.
@@ -12,13 +18,15 @@ The `webhook_handler.py` script performs the following steps sequentially:
     *   Extracts the `Authorization` header.
     *   Verifies it follows the `Bearer <token>` format.
     *   Compares the token against the `WEBHOOK_SECRET` environment variable.
-4.  **Parse Payload**: Decodes the JSON body.
-5.  **Schema Validation**: Checks for the presence of required fields: `event`, `appName`, `status`, `health`, `revision`, `clusterId`.
-6.  **Security Validation (Cluster ID)**:
+4.  **Parse & Validate Payload**:
+    *   Decodes the JSON body.
+    *   Uses **Pydantic** (`WebhookPayload` model) to validate the structure and data types.
+    *   **Strict Check**: Ensures `event`, `appName`, `status`, `health`, `revision`, and `clusterId` are present and of the correct type.
+5.  **Security Validation (Cluster ID)**:
     *   Compares the `X-Cluster-Id` HTTP header with the `clusterId` field in the JSON body.
     *   **Rule**: They MUST match. This prevents scenarios where a malicious actor might try to spoof the payload origin details while passing a valid header, or vice-versa.
-7.  **Enqueue**: Sends the validated payload to the SQS queue.
-8.  **Response**: Returns HTTP 200 to API Gateway.
+6.  **Enqueue**: Sends the validated payload to the SQS queue.
+7.  **Response**: Returns HTTP 200 to API Gateway.
 
 ## 🔧 Environment Variables
 

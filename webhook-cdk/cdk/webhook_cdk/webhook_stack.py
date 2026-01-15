@@ -1,6 +1,7 @@
 from aws_cdk import (
     Stack,
     Duration,
+    BundlingOptions,
     aws_lambda as _lambda,
     aws_apigatewayv2 as apigw,
     aws_apigatewayv2_integrations as integrations,
@@ -29,7 +30,17 @@ class ArgoCdWebhookStack(Stack):
             "WebhookHandler",
             runtime=_lambda.Runtime.PYTHON_3_10,
             handler="webhook_handler.lambda_handler",
-            code=_lambda.Code.from_asset("lambda"),
+            code=_lambda.Code.from_asset(
+                "lambda",
+                bundling=BundlingOptions(
+                    image=_lambda.Runtime.PYTHON_3_10.bundling_image,
+                    command=[
+                        "bash",
+                        "-c",
+                        "pip install -r requirements.txt -t /asset-output && cp -au . /asset-output",
+                    ],
+                ),
+            ),
             timeout=Duration.seconds(10),
             environment={
                 "SQS_QUEUE_URL": queue.queue_url,

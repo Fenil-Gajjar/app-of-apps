@@ -2,6 +2,7 @@ import json
 import os
 import logging
 import boto3
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 # ---------- Setup ----------
 logger = logging.getLogger()
@@ -12,27 +13,23 @@ sqs = boto3.client("sqs")
 WEBHOOK_SECRET = os.environ["WEBHOOK_SECRET"]
 SQS_QUEUE_URL = os.environ["SQS_QUEUE_URL"]
 
-# Required fields for valid ArgoCD webhook payload
-REQUIRED_FIELDS = {"event", "appName", "status", "health", "revision", "clusterId"}
+
+# ---------- Pydantic Models ----------
+class WebhookPayload(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    
+    event: str
+    appName: str
+    status: str
+    health: dict
+    revision: str
+    clusterId: str  # Ensures clusterId is present and is a string
 
 
-# ---------- Validation Functions ----------
-def _validate_payload_structure(payload):
-    """Ensure payload has all required ArgoCD fields."""
-    if not isinstance(payload, dict):
-        return False, "Payload must be a JSON object"
-
-    missing = REQUIRED_FIELDS - set(payload.keys())
-    if missing:
-        return False, f"Missing required fields: {missing}"
-
-    return True, None
-
-
-def _validate_cluster_id(headers, payload):
+def _validate_cluster_id(headers, payload: WebhookPayload):
     """Ensure header clusterId matches body clusterId."""
     header_cluster_id = headers.get("x-cluster-id") or headers.get("X-Cluster-Id")
-    body_cluster_id = payload.get("clusterId")
+    body_cluster_id = payload.clusterId
 
     if not header_cluster_id:
         return False, "Missing X-Cluster-Id header"
@@ -65,19 +62,18 @@ def lambda_handler(event, context):
         logger.warning("Invalid webhook token")
         return _unauthorized("Invalid token")
 
-    # 2️⃣ Parse Body
+    # 2️⃣ Parse Body & 3️⃣ Validate Payload Structure (Pydantic)
     body = event.get("body")
     try:
-        payload = json.loads(body) if body else {}
+        payload_data = json.loads(body) if body else {}
+        payload = WebhookPayload(**payload_data)
     except json.JSONDecodeError:
         logger.error("Invalid JSON payload")
         return _bad_request("Invalid JSON payload")
-
-    # 3️⃣ Validate Payload Structure
-    is_valid, error_msg = _validate_payload_structure(payload)
-    if not is_valid:
-        logger.warning("Payload structure validation failed: %s", error_msg)
-        return _bad_request(error_msg)
+    except ValidationError as e:
+        logger.warning("Payload validation failed: %s", e)
+        # Return a nice string error from Pydantic
+        return _bad_request(f"Validation Error: {str(e)}")
 
     # 4️⃣ Validate Header-Body ClusterId Match
     is_valid, error_msg = _validate_cluster_id(headers, payload)
@@ -85,17 +81,14 @@ def lambda_handler(event, context):
         logger.warning("Cluster ID validation failed: %s", error_msg)
         return _bad_request(error_msg)
 
-    # Extract clusterId (now guaranteed to exist and match)
-    cluster_id = payload.get("clusterId")
-
     # 5️⃣ Send to SQS
     try:
         response = sqs.send_message(
             QueueUrl=SQS_QUEUE_URL,
             MessageBody=json.dumps({
                 "source": "argocd",
-                "cluster_id": cluster_id,
-                "payload": payload,
+                "cluster_id": payload.clusterId,
+                "payload": payload.model_dump(),  # Convert back to dict
                 "headers": {
                     "x-request-id": context.aws_request_id
                 }

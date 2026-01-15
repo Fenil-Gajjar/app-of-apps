@@ -46,6 +46,7 @@ Before deploying, ensure you have the following installed:
 
 *   **Node.js** (for AWS CDK)
 *   **Python 3.10+** (for CDK app and Lambda)
+*   **Docker** (Must be running for CDK to bundle Python dependencies)
 *   **AWS CLI** (configured with appropriate credentials)
 *   **AWS CDK Toolkit**: `npm install -g aws-cdk`
 

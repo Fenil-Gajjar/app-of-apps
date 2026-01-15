@@ -16,6 +16,7 @@ The stack provisions the following AWS resources:
 *   **Purpose**: Validates and processes the webhook requests.
 *   **Runtime**: Python 3.10.
 *   **Code Source**: Uploads code from the `../lambda` directory.
+*   **Bundling**: Uses AWS CDK `BundlingOptions` to install dependencies (like `pydantic`) from `requirements.txt` using a Docker container during the build process.
 *   **Permissions**: Granted `sqs:SendMessage` permissions to the Queue.
 
 ### 3. API Gateway HTTP API (`ArgoCdWebhookApi`)
