@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-deployment
+  labels:
+    app: demo-deployment
+    clusterid: cluster-01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-deployment
+  template:
+    metadata:
+      labels:
+        app: demo-deployment
+        clusterid: cluster-01
+    spec:
+      containers:
+        - name: demo-deployment
+          image: nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+

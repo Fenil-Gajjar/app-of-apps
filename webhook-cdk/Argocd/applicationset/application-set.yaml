@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: cluster-apps
+    app.kubernetes.io/part-of: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        # TODO: REPLACE WITH YOUR ACTUAL REPO URL
+        repoURL: https://github.com/your-org/your-repo.git
+        revision: HEAD
+        files:
+          - path: "clusters/**/cluster-config.json"
+  template:
+    metadata:
+      name: '{{.clusterId}}-app'
+      labels:
+        # [NEW] Injecting clusterId label for identification in webhooks
+        clusterid: '{{.clusterId}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/your-org/your-repo.git
+        targetRevision: HEAD
+        # Points to the directory where cluster-config.json was found
+        path: '{{.path.directory}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

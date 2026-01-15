@@ -1,0 +1,56 @@
+apiVersion: v1
+data:
+  service.webhook.argocd-events: |
+    url: invoke-url-of-apigateway/webhook
+    method: POST
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: Authorization
+        value: Bearer argocd-webhook-secret-9f83kdf93kdf
+      - name: X-Cluster-Id
+        value: "{{.app.metadata.labels.clusterid}}"
+  subscriptions: |
+    - recipients:
+        - argocd-events
+      triggers:
+        - on-sync-succeeded
+  template.argocd-sync-succeeded: "webhook:
+
+    \  argocd-events:
+
+    \    method: POST
+
+    \    body: |
+
+    \      {
+
+    \        \"event\": \"sync-succeeded\",
+
+    \        \"appName\": \"{{.app.metadata.name}}\",
+
+    \        \"status\": \"{{.app.status.sync.status}}\",
+
+    \        \"health\": \"{{.app.status.health.status}}\",
+
+    \        \"revision\": \"{{.app.status.sync.revision}}\",
+
+    \        \"clusterId\": \"{{.app.metadata.labels.clusterid}}\"
+
+    \      }\ \n"
+  trigger.on-sync-succeeded: |
+    - when: app.status.sync.status == 'Synced'
+      send:
+        - argocd-sync-succeeded
+kind: ConfigMap
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"ConfigMap","metadata":{"annotations":{},"labels":{"app.kubernetes.io/component":"notifications-controller","app.kubernetes.io/name":"argocd-notifications-controller","app.kubernetes.io/part-of":"argocd"},"name":"argocd-notifications-cm","namespace":"argocd"}}
+  creationTimestamp: "2025-12-22T11:25:28Z"
+  labels:
+    app.kubernetes.io/component: notifications-controller
+    app.kubernetes.io/name: argocd-notifications-controller
+    app.kubernetes.io/part-of: argocd
+  name: argocd-notifications-cm
+  namespace: argocd

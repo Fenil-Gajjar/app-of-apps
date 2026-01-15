@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: demo-pod
+  labels:
+    app: demo-pod
+    clusterid: cluster-01
+spec:
+  containers:
+    - name: demo-pod
+      image: nginx:1.27-alpine
+      ports:
+        - containerPort: 80
+
