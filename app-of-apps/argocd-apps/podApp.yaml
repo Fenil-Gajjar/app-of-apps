@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/Fenil-Gajjar/k8s-actions.git
+    repoURL: https://github.com/Fenil-Gajjar/app-of-apps.git
     targetRevision: HEAD
     path: app-of-apps/actions/pod
   destination:
