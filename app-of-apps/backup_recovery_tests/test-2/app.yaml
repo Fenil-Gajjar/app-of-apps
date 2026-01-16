@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-app
+  namespace: argocd
+  labels:
+    clusterId: cluster-01
+    environment: production
+    managed-by: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/Fenil-Gajjar/app-of-apps.git'
+    targetRevision: main
+    path: app-of-apps/backup_recovery_tests/test-2/workload
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: demo-cluster
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
