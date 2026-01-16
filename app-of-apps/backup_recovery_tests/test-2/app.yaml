@@ -4,7 +4,7 @@ metadata:
   name: cluster-app
   namespace: argocd
   labels:
-    clusterId: cluster-02
+    clusterId: cluster-03
     environment: production
     managed-by: argocd
 spec:
