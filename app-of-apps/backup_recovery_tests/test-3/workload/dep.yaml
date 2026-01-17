@@ -2,8 +2,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: postgres
-  labels:
-    app: postgres
 spec:
   serviceName: postgres
   replicas: 1
@@ -23,8 +21,8 @@ spec:
         env:
         - name: POSTGRES_PASSWORD
           value: example
-        ports:
-        - containerPort: 5432
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
         volumeMounts:
         - name: data
           mountPath: /var/lib/postgresql/data
