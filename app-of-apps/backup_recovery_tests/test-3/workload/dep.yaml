@@ -1,31 +1,35 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: postgres
+  name: file-writer
+  namespace: pvc-demo
 spec:
-  serviceName: postgres
+  serviceName: file-writer
   replicas: 1
   selector:
     matchLabels:
-      app: postgres
+      app: file-writer
   template:
     metadata:
       labels:
-        app: postgres
+        app: file-writer
       annotations:
         backup.velero.io/backup-volumes: data
     spec:
       containers:
-      - name: postgres
-        image: postgres:14
-        env:
-        - name: POSTGRES_PASSWORD
-          value: example
-        - name: PGDATA
-          value: /var/lib/postgresql/data/pgdata
+      - name: writer
+        image: busybox
+        command:
+        - sh
+        - -c
+        - |
+          if [ ! -f /data/hello.txt ]; then
+            echo "hello from pvc" > /data/hello.txt
+          fi
+          sleep 3600
         volumeMounts:
         - name: data
-          mountPath: /var/lib/postgresql/data
+          mountPath: /data
   volumeClaimTemplates:
   - metadata:
       name: data
