@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: postgres-demo
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Fenil-Gajjar/app-of-apps.git
+    targetRevision: HEAD
+    path: app-of-apps/backup_recovery_tests/test-3/workload
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: postgres-app
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true
+    automated:
+      prune: false
+      selfHeal: false
